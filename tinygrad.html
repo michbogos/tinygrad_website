@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="tinygrad.css"/>
+    <title>tinygrad: A simple and powerful neural network framework</title>
+</head>
+<body>
+    <div id="navbar" class="row">
+        <a href="tinygrad.html"><img id="logo" src="logo.webp"/></a>
+        <h2><a href="getting_started.html">Get Started</a></h2>
+        <h2><a href="docs.html">Docs</a></h2>
+        <h2><a href="contribute.html">Contribute</a></h2>
+        <h2></h2>
+    </div>
+    <div class="stack">
+        <p>Tinygrad is a simple, yet powerful neural network framework. It's extremely simple and breaks down the most complex networks into 4 OpTypes.</p>
+        <div class="row">
+            <div>
+                    <h2>API similar to pytorch</h2>
+                    <p>The tinygrad API is very close to pytorch. You can start with tinygrad without the learning curve.</p>
+                    <h2>4 optypes</h2>
+                    <p>Tinygrad can represent even the most complex neural networks with just 4 ops. This makes the simple to reason about. Porting new hardware is also much easier.</p>
+                    <h2>Very low dependencies</h2>
+                    <p>The code is self-contained. The only dependencies are numpy and tqdm.</p>
+                    <h2>JIT compilation</h2>
+                    <p>The kernels are generated and compiled on the fly. This means higher performance on a wider range of hardware.</p>
+            </div>
+            <div>
+<pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; ">
+#Install tinygrad
+python3 -m pip install git+https://github.com/tinygrad/tinygrad.git
+</pre>
+<pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; ">
+<span style="color: rgb(215, 58, 73); font-weight: 400;">from</span> tinygrad <span style="color: rgb(215, 58, 73); font-weight: 400;">import</span> Tensor
+
+x = Tensor.eye(<span style="color: rgb(0, 92, 197); font-weight: 400;">3</span>, requires_grad=<span style="color: rgb(0, 92, 197); font-weight: 400;">True</span>)
+y = Tensor([[<span style="color: rgb(0, 92, 197); font-weight: 400;">2.0</span>,<span style="color: rgb(0, 92, 197); font-weight: 400;">0</span>,-<span style="color: rgb(0, 92, 197); font-weight: 400;">2.0</span>]], requires_grad=<span style="color: rgb(0, 92, 197); font-weight: 400;">True</span>)
+z = y.matmul(x).<span style="color: rgb(227, 98, 9); font-weight: 400;">sum</span>()
+z.backward()
+
+<span style="color: rgb(227, 98, 9); font-weight: 400;">print</span>(x.grad.numpy())  <span style="color: rgb(106, 115, 125); font-weight: 400;"># dz/dx</span>
+<span style="color: rgb(227, 98, 9); font-weight: 400;">print</span>(y.grad.numpy())  <span style="color: rgb(106, 115, 125); font-weight: 400;"># dz/dy</span>
+</pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

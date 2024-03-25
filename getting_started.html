@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="tinygrad.css"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="navbar" class="row">
+        <a href="tinygrad.html"><img id="logo" src="logo.webp"/></a>
+        <h2><a href="getting_started.html">Get Started</a></h2>
+        <h2><a href="docs.html">Docs</a></h2>
+        <h2><a href="contribute.html">Contribute</a></h2>
+        <h2></h2>
+    </div>
+    <div class="stack">
+        <div class="row">
+            <div>
+                <h2>Installation</h2>
+                    <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; ">git <span style="color: rgb(227, 98, 9); font-weight: 400;">clone</span> https://github.com/tinygrad/tinygrad.git 
+<span style="color: rgb(227, 98, 9); font-weight: 400;">cd</span> tinygrad
+python3 -m pip install -e .
+            </pre>
+            <h2>How it works</h2>
+            <p>Tinygrad has an API that is very similar to Pytorch. It differs internally. Tinygrad represents neural networks with 4 op types. These
+                are: UnaryOps, BinaryOps, MovementOps, ReduceOps. With these it's easier to optimize the kernels that run the neural network. It's
+                also easier to port new hardware to Tinygrad.
+            </p>
+            <h2>Quick MNIST</h2>
+            <p>Training an MNIST classifier gets you up to speed with all the components of training a neural network.</p>
+
+            <p>Firstly, we import tinygrad, tqdm and some stuff for nicer typing.</p>
+
+            <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; "><span style="color: rgb(215, 58, 73); font-weight: 400;">from</span> typing <span style="color: rgb(215, 58, 73); font-weight: 400;">import</span> <span style="color: rgb(215, 58, 73); font-weight: 400;">List</span>, <span style="color: rgb(215, 58, 73); font-weight: 400;">Callable</span>
+<span style="color: rgb(215, 58, 73); font-weight: 400;">from</span> tinygrad <span style="color: rgb(215, 58, 73); font-weight: 400;">import</span> Tensor, TinyJit, nn, GlobalCounters
+<span style="color: rgb(215, 58, 73); font-weight: 400;">from</span> extra.datasets <span style="color: rgb(215, 58, 73); font-weight: 400;">import</span> fetch_mnist
+<span style="color: rgb(215, 58, 73); font-weight: 400;">from</span> tqdm <span style="color: rgb(215, 58, 73); font-weight: 400;">import</span> trange
+            </pre>
+
+            <p>Next, we define our model. We put the individual layers in a List. We then call these layers sequentially.</p>
+
+            <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; "><span style="color: rgb(215, 58, 73); font-weight: 400;">class</span> <span style="color: rgb(111, 66, 193); font-weight: 400;">Model</span>:
+    <span style="color: rgb(215, 58, 73); font-weight: 400;">def</span> <span style="color: rgb(111, 66, 193); font-weight: 400;">__init__</span>(<span style="color: rgb(36, 41, 46); font-weight: 400;">self</span>):
+        self.layers: <span style="color: rgb(215, 58, 73); font-weight: 400;">List</span>[<span style="color: rgb(215, 58, 73); font-weight: 400;">Callable</span>[[Tensor], Tensor]] = [
+            nn.Conv2d(<span style="color: rgb(0, 92, 197); font-weight: 400;">1</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">32</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">5</span>), Tensor.relu,
+            nn.Conv2d(<span style="color: rgb(0, 92, 197); font-weight: 400;">32</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">32</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">5</span>), Tensor.relu,
+            nn.BatchNorm2d(<span style="color: rgb(0, 92, 197); font-weight: 400;">32</span>), Tensor.max_pool2d,
+            nn.Conv2d(<span style="color: rgb(0, 92, 197); font-weight: 400;">32</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">64</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">3</span>), Tensor.relu,
+            nn.Conv2d(<span style="color: rgb(0, 92, 197); font-weight: 400;">64</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">64</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">3</span>), Tensor.relu,
+            nn.BatchNorm2d(<span style="color: rgb(0, 92, 197); font-weight: 400;">64</span>), Tensor.max_pool2d,
+            <span style="color: rgb(215, 58, 73); font-weight: 400;">lambda</span> x: x.flatten(<span style="color: rgb(0, 92, 197); font-weight: 400;">1</span>), nn.Linear(<span style="color: rgb(0, 92, 197); font-weight: 400;">576</span>, <span style="color: rgb(0, 92, 197); font-weight: 400;">10</span>)]
+              
+    <span style="color: rgb(215, 58, 73); font-weight: 400;">def</span> <span style="color: rgb(111, 66, 193); font-weight: 400;">__call__</span>(<span style="color: rgb(36, 41, 46); font-weight: 400;">self, x:Tensor</span>) -&gt; Tensor: <span style="color: rgb(215, 58, 73); font-weight: 400;">return</span> x.sequential(self.layers)</pre>
+            
+            <p>In the main function, we use a helper function to get the training and test data.</p>
+
+            <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; "><span style="color: rgb(215, 58, 73); font-weight: 400;">if</span> __name__ == <span style="color: rgb(3, 47, 98); font-weight: 400;">"__main__"</span>:
+    X_train, Y_train, X_test, Y_test = fetch_mnist(tensors=<span style="color: rgb(0, 92, 197); font-weight: 400;">True</span>)</pre>
+
+            <p>Now we create the model. We also create the optimizer with the model parameters.</p>
+
+            <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; ">model = Model()
+opt = nn.optim.Adam(nn.state.get_parameters(model))</pre>
+
+            <p>Next are the train and test functions. We sample random images from the training/test set and process them in batches. We call the model,
+                use the sparse_categorical_crossentropy loss function on the results and do the backward pass all in one line. Then we make an optimizer step and return the loss. The thing to notice here is the TinyJit decorator. It captures the operations done inside
+                of these functions and optimizes them. This makes the training loop much faster.
+            </p>
+
+            <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; "><span style="color: rgb(0, 92, 197); font-weight: 400;">  @TinyJit</span>
+    <span style="color: rgb(215, 58, 73); font-weight: 400;">def</span> <span style="color: rgb(111, 66, 193); font-weight: 400;">train_step</span>() -&gt; Tensor:
+        <span style="color: rgb(215, 58, 73); font-weight: 400;">with</span> Tensor.train():
+        opt.zero_grad()
+        samples = Tensor.randint(<span style="color: rgb(0, 92, 197); font-weight: 400;">512</span>, high=X_train.shape[<span style="color: rgb(0, 92, 197); font-weight: 400;">0</span>])
+        loss = model(X_train[samples]).sparse_categorical_crossentropy(Y_train[samples]).backward()
+        opt.step()
+        <span style="color: rgb(215, 58, 73); font-weight: 400;">return</span> loss
+    
+<span style="color: rgb(0, 92, 197); font-weight: 400;">  @TinyJit</span>
+    <span style="color: rgb(215, 58, 73); font-weight: 400;">def</span> <span style="color: rgb(111, 66, 193); font-weight: 400;">get_test_acc</span>() -&gt; Tensor: <span style="color: rgb(215, 58, 73); font-weight: 400;">return</span> (model(X_test).argmax(axis=<span style="color: rgb(0, 92, 197); font-weight: 400;">1</span>) == Y_test).mean()*<span style="color: rgb(0, 92, 197); font-weight: 400;">100</span></pre>
+
+            <p>Finally, we train the network, while logging the loss at the current step.</p>
+
+            <pre style="font-family:monospace;color: rgb(36, 41, 46); background-color: rgb(255, 255, 255); font-weight: 400; ">    test_acc = <span style="color: rgb(227, 98, 9); font-weight: 400;">float</span>(<span style="color: rgb(3, 47, 98); font-weight: 400;">'nan'</span>)
+    <span style="color: rgb(215, 58, 73); font-weight: 400;">for</span> i <span style="color: rgb(215, 58, 73); font-weight: 400;">in</span> (t:=trange(<span style="color: rgb(0, 92, 197); font-weight: 400;">70</span>)):
+        GlobalCounters.reset()   <span style="color: rgb(106, 115, 125); font-weight: 400;"># <span style="color: rgb(215, 58, 73); font-weight: 400;">NOTE:</span> this makes it nice for DEBUG=2 timing</span>
+        loss = train_step()
+        <span style="color: rgb(215, 58, 73); font-weight: 400;">if</span> i%<span style="color: rgb(0, 92, 197); font-weight: 400;">10</span> == <span style="color: rgb(0, 92, 197); font-weight: 400;">9</span>: test_acc = get_test_acc().item()
+        t.set_description(<span style="color: rgb(3, 47, 98); font-weight: 400;">f"loss: <span style="color: rgb(36, 41, 46); font-weight: 400;">{loss.item():<span style="color: rgb(0, 92, 197); font-weight: 400;">6.2</span>f}</span> test_accuracy: <span style="color: rgb(36, 41, 46); font-weight: 400;">{test_acc:<span style="color: rgb(0, 92, 197); font-weight: 400;">5.2</span>f}</span>%"</span>)</pre>
+        <p>Tinygrad allows for concise, expressive and performant code. If you're interested in more examples, check out <a href="https://github.com/tinygrad/tinygrad/tree/master/examples">the examples in the repo.</a></p>
+
+        <h2>Tinygrad options</h2>
+        <p>Tinygrad provides options for debugging, choosing the backend, and enabling certain optimizations.</p>
+        <ul>
+            <li>DEBUG: enables extra debug information like FLOPS and generated code. Possible values: 0-6</li>
+            <li>GRAPH: generates a graph of the executed operations.</li>
+            <li>IMAGE: enable 2d specific optimizations.</li>
+            <li>FLOAT16: use float16 for images.</li>
+        </ul>
+        Also check out the <a href="https://github.com/tinygrad/tinygrad/blob/master/docs/abstractions2.py">repo docs</a> for a more in-depth guide on tinygrad
+        architecture.
+        </div>
+    </div>
+</body>
+</html>
